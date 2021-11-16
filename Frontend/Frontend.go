@@ -4,6 +4,7 @@ import (
 	AuctionFrontend "disys_miniproject3/AuctionFrontend"
 	AuctionBackend "disys_miniproject3/AuctionBackend"
 	"log"
+	"fmt"
 	"net"
 	"context"
 
@@ -51,7 +52,7 @@ func main() {
 }
 
 func Bid(bidReq *AuctionFrontend.BidRequest) AuctionFrontend.BidResponse {
-	
+	fmt.Printf("We haven't exploded 2.1!")
 	response, _ := frontendClientToBackend.Bid(context.Background(), &AuctionBackend.BidReplicaRequest{Amount: bidReq.Amount})
 
 	return AuctionFrontend.BidResponse{Ack:response.Ack}
@@ -59,6 +60,7 @@ func Bid(bidReq *AuctionFrontend.BidRequest) AuctionFrontend.BidResponse {
 
 
 func Result() AuctionFrontend.ResultResponse {
+	fmt.Printf("We haven't exploded 2.1!")
 	response, _ := frontendClientToBackend.Result(context.Background(), &AuctionBackend.Empty{})
 
 	return AuctionFrontend.ResultResponse{Result: response.Result}

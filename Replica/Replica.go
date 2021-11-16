@@ -2,6 +2,7 @@ package main
 
 import (
 	AuctionBackend "disys_miniproject3/AuctionBackend"
+	"fmt"
 	"log"
 	"net"
 
@@ -35,6 +36,7 @@ func main() {
 }
 
 func Bid(bidReq *AuctionBackend.BidReplicaRequest) AuctionBackend.BidReplicaResponse {
+	fmt.Printf("We haven't exploded 3.1!")
 	if bidReq.Amount > maxBid {
 		maxBid = bidReq.Amount
 		return AuctionBackend.BidReplicaResponse{Ack: "success"}
@@ -45,6 +47,6 @@ func Bid(bidReq *AuctionBackend.BidReplicaRequest) AuctionBackend.BidReplicaResp
 }
 
 func Result() AuctionBackend.ResultReplicaResponse {
-
+	fmt.Printf("We haven't exploded 3.2!")
 	return AuctionBackend.ResultReplicaResponse{Result: maxBid}
 }

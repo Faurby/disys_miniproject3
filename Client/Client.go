@@ -84,12 +84,14 @@ func terminalInput() {
 }
 
 func bidToFrontend(value int32) string {
+	fmt.Printf("We haven't exploded 1.1!")
 	response, _ := client.Bid(context.Background(), &AuctionFrontend.BidRequest{UserID: userID, Amount: value})
 
 	return response.Ack
 }
 
 func resultFromFrontend() int32 {
+	fmt.Printf("We haven't exploded 1.2!")
 	response, _ := client.Result(context.Background(), &AuctionFrontend.Empty{})
 
 	return response.Result
