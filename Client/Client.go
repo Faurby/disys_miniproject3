@@ -8,7 +8,7 @@ package main
 import (
 	"bufio"
 	"context"
-	"disys_miniproject3/Frontend"
+	"disys_miniproject3/pb"
 	"fmt"
 	"log"
 	"os"
@@ -22,7 +22,7 @@ import (
 var (
 	maxBid int32
 	userID uint32
-	client Frontend.FrontendClient
+	client pb.FrontendClient
 )
 
 func main() {
@@ -37,12 +37,17 @@ func main() {
 	}
 	defer conn.Close()
 
-	client = Frontend.NewFrontendClient(conn)
+	client = pb.NewFrontendClient(conn)
 
 	fmt.Println("Hello and welcome to the marvelous auction house!\n" +
 		"Here you can either bid or query the result.\n" +
 		"You can either type'bid amount' in the current item, or type 'result'\n")
 
+	go terminalInput()
+
+	// block main
+	bl := make(chan bool)
+	<-bl
 }
 
 func terminalInput() {
@@ -75,13 +80,13 @@ func terminalInput() {
 }
 
 func bidToFrontend(value int32) string {
-	response, _ := client.Bid(context.Background(), &Frontend.BidRequest{UserID: userID, Amount: value})
+	response, _ := client.Bid(context.Background(), &pb.BidRequest{UserID: userID, Amount: value})
 
 	return response.Ack
 }
 
 func result() int32 {
-	response, _ := client.Result(context.Background(), &Frontend.Empty{})
+	response, _ := client.Result(context.Background(), &pb.Empty{})
 
 	return response.Result
 }

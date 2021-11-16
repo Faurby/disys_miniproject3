@@ -1,0 +1,1 @@
+wt.exe PowerShell go run .\Frontend\Frontend.go `; move-focus left`; split-pane -H PowerShell go run .\Client\Client.go `; split-pane -V PowerShell go run .\Client\Client.go `; move-focus up `; split-pane -V PowerShell go run .\Client\Client.go `; 
