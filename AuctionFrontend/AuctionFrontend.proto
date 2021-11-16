@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package Frontend;
-option go_package = "./Frontend";
+package AuctionFrontend;
+option go_package = "./AuctionFrontend";
 
 message bidRequest {
     uint32 userID = 1;
@@ -12,9 +12,7 @@ message bidResponse {
     string ack = 1;
 }
 
-message Empty {
-
-}
+message Empty {}
 
 message resultResponse {
     int32 result = 1;

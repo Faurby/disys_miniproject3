@@ -8,7 +8,7 @@ package main
 import (
 	"bufio"
 	"context"
-	"disys_miniproject3/Frontend"
+	AuctionFrontend "disys_miniproject3/AuctionFrontend"
 	"fmt"
 	"log"
 	"os"
@@ -22,7 +22,7 @@ import (
 var (
 	maxBid int32
 	userID uint32
-	client Frontend.FrontendClient
+	client AuctionFrontend.FrontendClient
 )
 
 func main() {
@@ -37,12 +37,13 @@ func main() {
 	}
 	defer conn.Close()
 
-	client = Frontend.NewFrontendClient(conn)
+	client = AuctionFrontend.NewFrontendClient(conn)
 
 	fmt.Println("Hello and welcome to the marvelous auction house!\n" +
 		"Here you can either bid or query the result.\n" +
 		"You can either type'bid amount' in the current item, or type 'result'\n")
 
+	terminalInput()
 }
 
 func terminalInput() {
@@ -57,31 +58,39 @@ func terminalInput() {
 
 		if strings.HasPrefix(clientMessage, "bid") {
 			bids := strings.Split(clientMessage, " ")
+
 			if len(bids) > 1 {
 				bidValue, _ := strconv.Atoi(bids[1])
-				response := bidToFrontend(int32(bidValue))
-				if strings.EqualFold(response, "success") {
-					fmt.Println("Congratulations, you have the highest bid :)")
-				} else if strings.EqualFold(response, "fail") {
-					fmt.Println("Your bid was not high enough, yikes :(")
-				} else if strings.EqualFold(response, "exception") {
-					fmt.Println("Uff, something went wrong :/")
+
+				if bidValue > int(maxBid) {
+					maxBid = int32(bidValue)
+
+					response := bidToFrontend(int32(bidValue))
+					if strings.EqualFold(response, "success") {
+						fmt.Println("Congratulations, you have the highest bid :)")
+					} else if strings.EqualFold(response, "fail") {
+						fmt.Println("Your bid was not high enough, yikes :(")
+					} else if strings.EqualFold(response, "exception") {
+						fmt.Println("Uff, something went wrong :/ Please bid an integer.")
+					}
+				} else {
+					fmt.Println("You have to bid higher than your previous bid.")
 				}
 			}
 		} else if strings.EqualFold(clientMessage, "result") {
-			fmt.Printf("The highest bidder / result : %d", result())
+			fmt.Printf("The highest bidder / result : %d", resultFromFrontend())
 		}
 	}
 }
 
 func bidToFrontend(value int32) string {
-	response, _ := client.Bid(context.Background(), &Frontend.BidRequest{UserID: userID, Amount: value})
+	response, _ := client.Bid(context.Background(), &AuctionFrontend.BidRequest{UserID: userID, Amount: value})
 
 	return response.Ack
 }
 
-func result() int32 {
-	response, _ := client.Result(context.Background(), &Frontend.Empty{})
+func resultFromFrontend() int32 {
+	response, _ := client.Result(context.Background(), &AuctionFrontend.Empty{})
 
 	return response.Result
 }
