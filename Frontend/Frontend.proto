@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package Frontend;
+option go_package = "./Frontend";
+
+message bidRequest {
+    uint32 userID = 1;
+    int32 amount = 2;
+}
+
+message bidResponse {
+    string ack = 1;
+}
+
+message Empty {
+
+}
+
+message resultResponse {
+    int32 result = 1;
+}
+
+service Frontend {
+    rpc bid (bidRequest) returns (bidResponse){}
+    rpc result (Empty) returns (resultResponse){}
+}
