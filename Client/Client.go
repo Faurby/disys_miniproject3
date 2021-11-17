@@ -65,16 +65,22 @@ func terminalInput() {
 			if len(bids) > 1 {
 				bidValue, _ := strconv.Atoi(bids[1])
 				response := bidToFrontend(int32(bidValue))
-				if strings.EqualFold(response, "success") {
+				switch response {
+				case "success":
 					fmt.Println("Congratulations, you have the highest bid :)")
-				} else if strings.EqualFold(response, "fail") {
+
+				case "fail":
 					fmt.Println("Your bid was not high enough, yikes :(")
-				} else if strings.EqualFold(response, "exception") {
-					fmt.Println("Uff, something went wrong :/")
+
+				case "exception":
+					fmt.Println("Either something is wrong, or the auction has ended :/")
+
 				}
+			} else {
+				fmt.Println("Please add amount")
 			}
 		} else if strings.EqualFold(clientMessage, "result") {
-			fmt.Printf("The highest bidder / result : %d", result())
+			fmt.Printf("The highest bidder / result : %d\n", result())
 		}
 	}
 }
