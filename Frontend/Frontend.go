@@ -175,7 +175,7 @@ func getMax() (userID uint32, max int32) {
 }
 
 func countdown() {
-	time.Sleep(20 * time.Second)
+	time.Sleep(5 * time.Minute)
 	auctionActive = false
 	return
 }
