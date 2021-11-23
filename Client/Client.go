@@ -8,7 +8,7 @@ package main
 import (
 	"bufio"
 	"context"
-	"disys_miniproject3/Frontend"
+	"disys_miniproject3/pb"
 	"fmt"
 	"log"
 	"os"
@@ -20,13 +20,11 @@ import (
 )
 
 var (
-	maxBid int32
 	userID uint32
-	client Frontend.FrontendClient
+	client pb.FrontendClient
 )
 
 func main() {
-	maxBid = 0
 
 	userID = uuid.New().ID()
 	log.Println("Connecting to frontend on port 5000")
@@ -37,12 +35,17 @@ func main() {
 	}
 	defer conn.Close()
 
-	client = Frontend.NewFrontendClient(conn)
+	client = pb.NewFrontendClient(conn)
 
 	fmt.Println("Hello and welcome to the marvelous auction house!\n" +
 		"Here you can either bid or query the result.\n" +
 		"You can either type'bid amount' in the current item, or type 'result'\n")
 
+	go terminalInput()
+
+	// block main
+	bl := make(chan bool)
+	<-bl
 }
 
 func terminalInput() {
@@ -60,28 +63,49 @@ func terminalInput() {
 			if len(bids) > 1 {
 				bidValue, _ := strconv.Atoi(bids[1])
 				response := bidToFrontend(int32(bidValue))
-				if strings.EqualFold(response, "success") {
+				switch response {
+				case "success":
 					fmt.Println("Congratulations, you have the highest bid :)")
-				} else if strings.EqualFold(response, "fail") {
+
+				case "fail":
 					fmt.Println("Your bid was not high enough, yikes :(")
-				} else if strings.EqualFold(response, "exception") {
-					fmt.Println("Uff, something went wrong :/")
+
+				case "exception":
+					fmt.Println("The auction has ended :/")
+
 				}
+			} else {
+				fmt.Println("Please add amount")
 			}
 		} else if strings.EqualFold(clientMessage, "result") {
-			fmt.Printf("The highest bidder / result : %d", result())
+			result()
 		}
 	}
 }
 
 func bidToFrontend(value int32) string {
-	response, _ := client.Bid(context.Background(), &Frontend.BidRequest{UserID: userID, Amount: value})
+	response, _ := client.Bid(context.Background(), &pb.BidRequest{UserID: userID, Amount: value})
 
 	return response.Ack
 }
 
-func result() int32 {
-	response, _ := client.Result(context.Background(), &Frontend.Empty{})
+func result() {
+	response, _ := client.Result(context.Background(), &pb.ResultRequest{UserID: userID})
 
-	return response.Result
+	if response.State {
+		fmt.Println("The auction is ongoing")
+
+		if response.Leader {
+			fmt.Printf("You're in the lead with current bid: %d\n", response.Result)
+		} else {
+			fmt.Printf("Your bid is not the highest. Your current bid: %d\n", response.Result)
+		}
+	} else {
+		fmt.Println("The auction is over")
+		if response.Leader {
+			fmt.Printf("You're the winner!! with final bid: %d\n", response.Result)
+		} else {
+			fmt.Printf("You didnt win the auction :( The winning bid was: %d\n", response.Result)
+		}
+	}
 }

@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "./pb";
+
+message bidRequest {
+    uint32 userID = 1;
+    int32 amount = 2;
+}
+
+message bidResponse {
+    string ack = 1;
+}
+
+message resultRequest {
+    uint32 userID = 1;
+}
+
+message resultResponse {
+    int32 result = 1;
+    bool leader = 2;
+    bool state = 3;
+}
+
+service Frontend {
+    rpc bid (bidRequest) returns (bidResponse){}
+    rpc result (resultRequest) returns (resultResponse){}
+}
+
+message bidReplicaResponse {
+    string ack = 1;
+}
+
+service Replica {
+    rpc bid (bidRequest) returns (bidReplicaResponse){}
+    rpc result (resultRequest) returns (resultResponse){}
+}
+
