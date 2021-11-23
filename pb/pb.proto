@@ -12,33 +12,27 @@ message bidResponse {
     string ack = 1;
 }
 
-message Empty {
-
+message resultRequest {
+    uint32 userID = 1;
 }
 
 message resultResponse {
     int32 result = 1;
+    bool leader = 2;
+    bool state = 3;
 }
 
 service Frontend {
     rpc bid (bidRequest) returns (bidResponse){}
-    rpc result (Empty) returns (resultResponse){}
-}
-
-message bidReplicaRequest {
-    int32 amount = 2;
+    rpc result (resultRequest) returns (resultResponse){}
 }
 
 message bidReplicaResponse {
     string ack = 1;
 }
 
-message resultReplicaResponse {
-    int32 result = 1;
-}
-
 service Replica {
-    rpc bid (bidReplicaRequest) returns (bidReplicaResponse){}
-    rpc result (Empty) returns (resultReplicaResponse){}
+    rpc bid (bidRequest) returns (bidReplicaResponse){}
+    rpc result (resultRequest) returns (resultResponse){}
 }
 

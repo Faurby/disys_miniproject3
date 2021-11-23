@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FrontendClient interface {
 	Bid(ctx context.Context, in *BidRequest, opts ...grpc.CallOption) (*BidResponse, error)
-	Result(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ResultResponse, error)
+	Result(ctx context.Context, in *ResultRequest, opts ...grpc.CallOption) (*ResultResponse, error)
 }
 
 type frontendClient struct {
@@ -39,7 +39,7 @@ func (c *frontendClient) Bid(ctx context.Context, in *BidRequest, opts ...grpc.C
 	return out, nil
 }
 
-func (c *frontendClient) Result(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ResultResponse, error) {
+func (c *frontendClient) Result(ctx context.Context, in *ResultRequest, opts ...grpc.CallOption) (*ResultResponse, error) {
 	out := new(ResultResponse)
 	err := c.cc.Invoke(ctx, "/pb.Frontend/result", in, out, opts...)
 	if err != nil {
@@ -53,7 +53,7 @@ func (c *frontendClient) Result(ctx context.Context, in *Empty, opts ...grpc.Cal
 // for forward compatibility
 type FrontendServer interface {
 	Bid(context.Context, *BidRequest) (*BidResponse, error)
-	Result(context.Context, *Empty) (*ResultResponse, error)
+	Result(context.Context, *ResultRequest) (*ResultResponse, error)
 	mustEmbedUnimplementedFrontendServer()
 }
 
@@ -64,7 +64,7 @@ type UnimplementedFrontendServer struct {
 func (UnimplementedFrontendServer) Bid(context.Context, *BidRequest) (*BidResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bid not implemented")
 }
-func (UnimplementedFrontendServer) Result(context.Context, *Empty) (*ResultResponse, error) {
+func (UnimplementedFrontendServer) Result(context.Context, *ResultRequest) (*ResultResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Result not implemented")
 }
 func (UnimplementedFrontendServer) mustEmbedUnimplementedFrontendServer() {}
@@ -99,7 +99,7 @@ func _Frontend_Bid_Handler(srv interface{}, ctx context.Context, dec func(interf
 }
 
 func _Frontend_Result_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(ResultRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func _Frontend_Result_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: "/pb.Frontend/result",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FrontendServer).Result(ctx, req.(*Empty))
+		return srv.(FrontendServer).Result(ctx, req.(*ResultRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -133,15 +133,15 @@ var Frontend_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pb/pb.proto",
+	Metadata: "pb.proto",
 }
 
 // ReplicaClient is the client API for Replica service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReplicaClient interface {
-	Bid(ctx context.Context, in *BidReplicaRequest, opts ...grpc.CallOption) (*BidReplicaResponse, error)
-	Result(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ResultReplicaResponse, error)
+	Bid(ctx context.Context, in *BidRequest, opts ...grpc.CallOption) (*BidReplicaResponse, error)
+	Result(ctx context.Context, in *ResultRequest, opts ...grpc.CallOption) (*ResultResponse, error)
 }
 
 type replicaClient struct {
@@ -152,7 +152,7 @@ func NewReplicaClient(cc grpc.ClientConnInterface) ReplicaClient {
 	return &replicaClient{cc}
 }
 
-func (c *replicaClient) Bid(ctx context.Context, in *BidReplicaRequest, opts ...grpc.CallOption) (*BidReplicaResponse, error) {
+func (c *replicaClient) Bid(ctx context.Context, in *BidRequest, opts ...grpc.CallOption) (*BidReplicaResponse, error) {
 	out := new(BidReplicaResponse)
 	err := c.cc.Invoke(ctx, "/pb.Replica/bid", in, out, opts...)
 	if err != nil {
@@ -161,8 +161,8 @@ func (c *replicaClient) Bid(ctx context.Context, in *BidReplicaRequest, opts ...
 	return out, nil
 }
 
-func (c *replicaClient) Result(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ResultReplicaResponse, error) {
-	out := new(ResultReplicaResponse)
+func (c *replicaClient) Result(ctx context.Context, in *ResultRequest, opts ...grpc.CallOption) (*ResultResponse, error) {
+	out := new(ResultResponse)
 	err := c.cc.Invoke(ctx, "/pb.Replica/result", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -174,8 +174,8 @@ func (c *replicaClient) Result(ctx context.Context, in *Empty, opts ...grpc.Call
 // All implementations must embed UnimplementedReplicaServer
 // for forward compatibility
 type ReplicaServer interface {
-	Bid(context.Context, *BidReplicaRequest) (*BidReplicaResponse, error)
-	Result(context.Context, *Empty) (*ResultReplicaResponse, error)
+	Bid(context.Context, *BidRequest) (*BidReplicaResponse, error)
+	Result(context.Context, *ResultRequest) (*ResultResponse, error)
 	mustEmbedUnimplementedReplicaServer()
 }
 
@@ -183,10 +183,10 @@ type ReplicaServer interface {
 type UnimplementedReplicaServer struct {
 }
 
-func (UnimplementedReplicaServer) Bid(context.Context, *BidReplicaRequest) (*BidReplicaResponse, error) {
+func (UnimplementedReplicaServer) Bid(context.Context, *BidRequest) (*BidReplicaResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Bid not implemented")
 }
-func (UnimplementedReplicaServer) Result(context.Context, *Empty) (*ResultReplicaResponse, error) {
+func (UnimplementedReplicaServer) Result(context.Context, *ResultRequest) (*ResultResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Result not implemented")
 }
 func (UnimplementedReplicaServer) mustEmbedUnimplementedReplicaServer() {}
@@ -203,7 +203,7 @@ func RegisterReplicaServer(s grpc.ServiceRegistrar, srv ReplicaServer) {
 }
 
 func _Replica_Bid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BidReplicaRequest)
+	in := new(BidRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -215,13 +215,13 @@ func _Replica_Bid_Handler(srv interface{}, ctx context.Context, dec func(interfa
 		FullMethod: "/pb.Replica/bid",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReplicaServer).Bid(ctx, req.(*BidReplicaRequest))
+		return srv.(ReplicaServer).Bid(ctx, req.(*BidRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Replica_Result_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(ResultRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -233,7 +233,7 @@ func _Replica_Result_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: "/pb.Replica/result",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReplicaServer).Result(ctx, req.(*Empty))
+		return srv.(ReplicaServer).Result(ctx, req.(*ResultRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -255,5 +255,5 @@ var Replica_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pb/pb.proto",
+	Metadata: "pb.proto",
 }

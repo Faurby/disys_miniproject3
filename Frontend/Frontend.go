@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"time"
+	"reflect"
 
 	grpc "google.golang.org/grpc"
 )
@@ -16,14 +16,10 @@ type Server struct {
 }
 
 var (
-	HighestBidMap map[uint32]int32
-	auctionActive bool
-	clients       []pb.ReplicaClient
+	replicas []pb.ReplicaClient
 )
 
 func main() {
-	HighestBidMap = make(map[uint32]int32)
-	auctionActive = true
 	listen, err := net.Listen("tcp", ":5000")
 	if err != nil {
 		log.Fatalf("Failed to listen on port 5000: %v", err)
@@ -33,7 +29,7 @@ func main() {
 	// Creates empty gRPC server
 	grpcServer := grpc.NewServer()
 
-	// Creates instance of our ChittyChatServer struct and binds it with our empty gRPC server.
+	// Creates instance of our struct and binds it with our empty gRPC server.
 	ccs := Server{}
 	pb.RegisterFrontendServer(grpcServer, &ccs)
 
@@ -41,8 +37,6 @@ func main() {
 	go setupReplicaConnection("localhost:6001")
 	go setupReplicaConnection("localhost:6002")
 	go setupReplicaConnection("localhost:6003")
-
-	go countdown()
 
 	err = grpcServer.Serve(listen)
 	if err != nil {
@@ -60,122 +54,82 @@ func setupReplicaConnection(ip string) {
 	}
 	defer conn.Close()
 
-	clients = append(clients, pb.NewReplicaClient(conn))
+	replicas = append(replicas, pb.NewReplicaClient(conn))
 	// block main
 	bl := make(chan bool)
 	<-bl
 }
 
 func (c *Server) Bid(ctx context.Context, in *pb.BidRequest) (*pb.BidResponse, error) {
-	clientID := in.UserID
-	clientBid := in.Amount
-	output := &pb.BidResponse{}
-
-	if !auctionActive {
-		return &pb.BidResponse{Ack: "exception"}, nil
-	}
 
 	// Send bid to all Replicas
 	var responses []*pb.BidReplicaResponse
-	for _, v := range clients {
-		response, _ := v.Bid(context.Background(), &pb.BidReplicaRequest{Amount: clientBid})
-		responses = append(responses, response)
+	for _, v := range replicas {
+		response, _ := v.Bid(context.Background(), in)
+		if response != nil {
+			responses = append(responses, response)
+		}
 	}
 	fmt.Printf("---- Responses from Replicates ----\n%v\n\n", responses)
 
-	// Replicas have agreed
-	if ok, ack := checkResponses(responses); ok {
-		output = &pb.BidResponse{Ack: ack}
+	// if Replicas have agreed
+	ok, ack := checkResponses(responses)
+	if ok {
+		return &pb.BidResponse{Ack: ack}, nil
 	}
-
-	// if client exists in array
-	if _, ok := HighestBidMap[clientID]; ok {
-
-		fmt.Println(HighestBidMap)
-		HighestBidMap[clientID] = clientBid
-		return output, nil
-		// else add client to map with clientBid
-	} else {
-
-		HighestBidMap[clientID] = clientBid
-		fmt.Println(HighestBidMap)
-
-		return output, nil
-	}
+	return &pb.BidResponse{Ack: "exception"}, nil
 }
 
-func (c *Server) Result(ctx context.Context, in *pb.Empty) (*pb.ResultResponse, error) {
+func (c *Server) Result(ctx context.Context, in *pb.ResultRequest) (*pb.ResultResponse, error) {
 	// Send bid to all Replicas
-	var responses []*pb.ResultReplicaResponse
-	for _, v := range clients {
-		response, _ := v.Result(context.Background(), &pb.Empty{})
-		responses = append(responses, response)
+	var responses []*pb.ResultResponse
+	for _, v := range replicas {
+		response, _ := v.Result(context.Background(), in)
+		if response != nil {
+			responses = append(responses, response)
+		}
 	}
+
 	fmt.Printf("---- Responses from Replicates ----\n%v\n\n", responses)
 
 	// Replicas have agreed
-	if ok, result := checkResultResponses(responses); ok {
-		return &pb.ResultResponse{Result: result}, nil
-	}
-	return &pb.ResultResponse{Result: -1}, nil
+	return checkResultResponses(responses), nil
 }
 
-func checkResultResponses(r []*pb.ResultReplicaResponse) (bool, int32) {
+func checkResultResponses(r []*pb.ResultResponse) *pb.ResultResponse {
 
-	// If three are equal
-	if r[0].Result == r[1].Result && r[1].Result == r[2].Result {
-		return true, r[0].Result
+	if reflect.DeepEqual(r[0], r[1]) {
+		fmt.Println("2 replicas agree out of 2")
+		return r[0]
+
+	} else if len(r) > 2 {
+		if reflect.DeepEqual(r[1], r[2]) || reflect.DeepEqual(r[0], r[2]) {
+			fmt.Println("2 replicas agree out of 3")
+			return r[2]
+		}
 	}
-
-	// If two are equal
-	if r[0].Result == r[1].Result {
-		return true, r[0].Result
-
-	} else if r[1].Result == r[2].Result {
-		return true, r[1].Result
-
-	} else if r[0].Result == r[2].Result {
-		return true, r[2].Result
-
-	}
-	// None are equal, return false
-	return false, -1
+	fmt.Println("No replicas agree man :(")
+	return &pb.ResultResponse{Result: -1}
 }
 
 func checkResponses(r []*pb.BidReplicaResponse) (bool, string) {
 
-	// If three are equal
-	if r[0].Ack == r[1].Ack && r[1].Ack == r[2].Ack {
-		return true, r[0].Ack
+	bidResponseMap := make(map[string]int32)
+
+	for _, v := range r {
+		bidResponseMap[v.Ack]++
 	}
 
-	// If two are equal
-	if r[0].Ack == r[1].Ack {
-		return true, r[0].Ack
-
-	} else if r[1].Ack == r[2].Ack {
-		return true, r[1].Ack
-
-	} else if r[0].Ack == r[2].Ack {
-		return true, r[2].Ack
-
-	}
-	// None are equal, return false
-	return false, "exception"
-}
-
-func getMax() (userID uint32, max int32) {
-	for user, v := range HighestBidMap {
-		if v > max {
-			max = v
-			userID = user
+	var max int32 = 0
+	var answer string
+	for ack, count := range bidResponseMap {
+		if count > max {
+			max = count
+			answer = ack
 		}
 	}
-	return
-}
-
-func countdown() {
-	time.Sleep(5 * time.Minute)
-	auctionActive = false
-	return
+	if max > 1 {
+		return true, answer
+	}
+	return false, "exception"
 }

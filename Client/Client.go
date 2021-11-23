@@ -20,13 +20,11 @@ import (
 )
 
 var (
-	maxBid int32
 	userID uint32
 	client pb.FrontendClient
 )
 
 func main() {
-	maxBid = 0
 
 	userID = uuid.New().ID()
 	log.Println("Connecting to frontend on port 5000")
@@ -73,14 +71,14 @@ func terminalInput() {
 					fmt.Println("Your bid was not high enough, yikes :(")
 
 				case "exception":
-					fmt.Println("Either something is wrong, or the auction has ended :/")
+					fmt.Println("The auction has ended :/")
 
 				}
 			} else {
 				fmt.Println("Please add amount")
 			}
 		} else if strings.EqualFold(clientMessage, "result") {
-			fmt.Printf("The highest bidder / result : %d\n", result())
+			result()
 		}
 	}
 }
@@ -91,8 +89,23 @@ func bidToFrontend(value int32) string {
 	return response.Ack
 }
 
-func result() int32 {
-	response, _ := client.Result(context.Background(), &pb.Empty{})
+func result() {
+	response, _ := client.Result(context.Background(), &pb.ResultRequest{UserID: userID})
 
-	return response.Result
+	if response.State {
+		fmt.Println("The auction is ongoing")
+
+		if response.Leader {
+			fmt.Printf("You're in the lead with current bid: %d\n", response.Result)
+		} else {
+			fmt.Printf("Your bid is not the highest. Your current bid: %d\n", response.Result)
+		}
+	} else {
+		fmt.Println("The auction is over")
+		if response.Leader {
+			fmt.Printf("You're the winner!! with final bid: %d\n", response.Result)
+		} else {
+			fmt.Printf("You didnt win the auction :( The winning bid was: %d\n", response.Result)
+		}
+	}
 }
