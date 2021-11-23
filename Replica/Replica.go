@@ -103,12 +103,11 @@ func getMax() (userID uint32, max int32) {
 }
 
 func countdownToDeath() {
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 	os.Exit(1)
 }
 
 func countdown() {
-	time.Sleep(10 * time.Second)
+	time.Sleep(2 * time.Minute)
 	auctionActive = false
-	return
 }
