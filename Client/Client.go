@@ -98,7 +98,7 @@ func result() {
 		if response.Leader {
 			fmt.Printf("You're in the lead with current bid: %d\n", response.Result)
 		} else {
-			fmt.Printf("Your bid is not the highest. Your current bid: %d\n", response.Result)
+			fmt.Printf("Your bid is not the highest. The highest bid is: %d\n", response.Result)
 		}
 	} else {
 		fmt.Println("The auction is over")
