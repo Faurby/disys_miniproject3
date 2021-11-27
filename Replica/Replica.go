@@ -108,7 +108,7 @@ func countdownToDeath() {
 }
 
 func countdown() {
-	time.Sleep(10 * time.Second)
+	time.Sleep(25 * time.Second)
 	auctionActive = false
 	return
 }
