@@ -1,6 +1,6 @@
 # disys_miniproject3
 
-Replica:6001 dies after 30 seconds, and the auction ends after 2 minutes.
+Replica:6001 dies after 10 seconds, and the auction ends after 25 seconds.
 
 If you have Powershell and Windows Terminal, you can simply right click start.ps1 and "run with Powershell"
 
