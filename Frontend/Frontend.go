@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"reflect"
 
 	grpc "google.golang.org/grpc"
 )
@@ -16,7 +15,7 @@ type Server struct {
 }
 
 var (
-	replicas []pb.ReplicaClient
+	replicas []pb.ReplicaManagerClient
 )
 
 func main() {
@@ -42,7 +41,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to start gRPC server :: %v", err)
 	}
-	fmt.Println("testtesttest this is after server skrrttt")
 }
 
 func setupReplicaConnection(ip string) {
@@ -54,18 +52,18 @@ func setupReplicaConnection(ip string) {
 	}
 	defer conn.Close()
 
-	replicas = append(replicas, pb.NewReplicaClient(conn))
+	replicas = append(replicas, pb.NewReplicaManagerClient(conn))
 	// block main
 	bl := make(chan bool)
 	<-bl
 }
 
-func (c *Server) Bid(ctx context.Context, in *pb.BidRequest) (*pb.BidResponse, error) {
+func (c *Server) Increment(ctx context.Context, in *pb.IncRequest) (*pb.IncResponse, error) {
 
-	// Send bid to all Replicas
-	var responses []*pb.BidReplicaResponse
+	// Send increment request to all Replicas
+	var responses []*pb.IncResponse
 	for _, v := range replicas {
-		response, _ := v.Bid(context.Background(), in)
+		response, _ := v.Increment(context.Background(), in)
 		if response != nil {
 			responses = append(responses, response)
 		}
@@ -73,63 +71,31 @@ func (c *Server) Bid(ctx context.Context, in *pb.BidRequest) (*pb.BidResponse, e
 	fmt.Printf("---- Responses from Replicates ----\n%v\n\n", responses)
 
 	// if Replicas have agreed
-	ok, ack := checkResponses(responses)
+	ok, amount := checkResponses(responses)
 	if ok {
-		return &pb.BidResponse{Ack: ack}, nil
+		return &pb.IncResponse{NewAmount: amount}, nil
 	}
-	return &pb.BidResponse{Ack: "exception"}, nil
+	return &pb.IncResponse{NewAmount: -1}, nil
 }
 
-func (c *Server) Result(ctx context.Context, in *pb.ResultRequest) (*pb.ResultResponse, error) {
-	// Send bid to all Replicas
-	var responses []*pb.ResultResponse
-	for _, v := range replicas {
-		response, _ := v.Result(context.Background(), in)
-		if response != nil {
-			responses = append(responses, response)
-		}
-	}
+func checkResponses(r []*pb.IncResponse) (bool, int32) {
 
-	fmt.Printf("---- Responses from Replicates ----\n%v\n\n", responses)
-
-	// Replicas have agreed
-	return checkResultResponses(responses), nil
-}
-
-func checkResultResponses(r []*pb.ResultResponse) *pb.ResultResponse {
-
-	if reflect.DeepEqual(r[0], r[1]) {
-		fmt.Println("2 replicas agree out of 2")
-		return r[0]
-
-	} else if len(r) > 2 {
-		if reflect.DeepEqual(r[1], r[2]) || reflect.DeepEqual(r[0], r[2]) {
-			fmt.Println("2 replicas agree out of 3")
-			return r[2]
-		}
-	}
-	fmt.Println("No replicas agree man :(")
-	return &pb.ResultResponse{Result: -1}
-}
-
-func checkResponses(r []*pb.BidReplicaResponse) (bool, string) {
-
-	bidResponseMap := make(map[string]int32)
+	incResponseMap := make(map[int32]int32)
 
 	for _, v := range r {
-		bidResponseMap[v.Ack]++
+		incResponseMap[v.NewAmount]++
 	}
 
 	var max int32 = 0
-	var answer string
-	for ack, count := range bidResponseMap {
+	var answer int32
+	for ans, count := range incResponseMap {
 		if count > max {
 			max = count
-			answer = ack
+			answer = ans
 		}
 	}
 	if max > 1 {
 		return true, answer
 	}
-	return false, "exception"
+	return false, -1
 }

@@ -15,18 +15,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 )
 
 var (
-	userID uint32
 	client pb.FrontendClient
 )
 
 func main() {
 
-	userID = uuid.New().ID()
 	log.Println("Connecting to frontend on port 5000")
 	conn, err := grpc.Dial("localhost:5000", grpc.WithInsecure())
 
@@ -37,9 +34,8 @@ func main() {
 
 	client = pb.NewFrontendClient(conn)
 
-	fmt.Println("Hello and welcome to the marvelous auction house!\n" +
-		"Here you can either bid or query the result.\n" +
-		"You can either type'bid amount' in the current item, or type 'result'\n")
+	fmt.Println("Type 'increment' to increment by 1\n" +
+		"Otherwise type 'increment' followed by a value.\n")
 
 	go terminalInput()
 
@@ -58,54 +54,22 @@ func terminalInput() {
 			continue
 		}
 
-		if strings.HasPrefix(clientMessage, "bid") {
-			bids := strings.Split(clientMessage, " ")
-			if len(bids) > 1 {
-				bidValue, _ := strconv.Atoi(bids[1])
-				response := bidToFrontend(int32(bidValue))
-				switch response {
-				case "success":
-					fmt.Println("Congratulations, you have the highest bid :)")
-
-				case "fail":
-					fmt.Println("Your bid was not high enough, yikes :(")
-
-				case "exception":
-					fmt.Println("The auction has ended :/")
-
-				}
+		if strings.HasPrefix(clientMessage, "increment") {
+			increment := strings.Split(clientMessage, " ")
+			if len(increment) > 1 {
+				bidValue, _ := strconv.Atoi(increment[1])
+				response := incrementToFrontend(int32(bidValue))
+				fmt.Printf("The value is this now: %d", response)
 			} else {
-				fmt.Println("Please add amount")
+				response := incrementToFrontend(int32(1))
+				fmt.Printf("The value is this now: %d", response)
 			}
-		} else if strings.EqualFold(clientMessage, "result") {
-			result()
 		}
 	}
 }
 
-func bidToFrontend(value int32) string {
-	response, _ := client.Bid(context.Background(), &pb.BidRequest{UserID: userID, Amount: value})
+func incrementToFrontend(value int32) int32 {
+	response, _ := client.Increment(context.Background(), &pb.IncRequest{Amount: value})
 
-	return response.Ack
-}
-
-func result() {
-	response, _ := client.Result(context.Background(), &pb.ResultRequest{UserID: userID})
-
-	if response.State {
-		fmt.Println("The auction is ongoing")
-
-		if response.Leader {
-			fmt.Printf("You're in the lead with current bid: %d\n", response.Result)
-		} else {
-			fmt.Printf("Your bid is not the highest. The highest bid: %d\n", response.Result)
-		}
-	} else {
-		fmt.Println("The auction is over")
-		if response.Leader {
-			fmt.Printf("You're the winner!! with final bid: %d\n", response.Result)
-		} else {
-			fmt.Printf("You didnt win the auction :( The winning bid was: %d\n", response.Result)
-		}
-	}
+	return response.NewAmount
 }

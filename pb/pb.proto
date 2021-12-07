@@ -3,36 +3,19 @@ syntax = "proto3";
 package pb;
 option go_package = "./pb";
 
-message bidRequest {
-    uint32 userID = 1;
-    int32 amount = 2;
+message incRequest {
+    int32 amount = 1;
 }
 
-message bidResponse {
-    string ack = 1;
-}
-
-message resultRequest {
-    uint32 userID = 1;
-}
-
-message resultResponse {
-    int32 result = 1;
-    bool leader = 2;
-    bool state = 3;
+message incResponse {
+    int32 newAmount = 1;
 }
 
 service Frontend {
-    rpc bid (bidRequest) returns (bidResponse){}
-    rpc result (resultRequest) returns (resultResponse){}
+    rpc increment (incRequest) returns (incResponse){}
 }
 
-message bidReplicaResponse {
-    string ack = 1;
-}
-
-service Replica {
-    rpc bid (bidRequest) returns (bidReplicaResponse){}
-    rpc result (resultRequest) returns (resultResponse){}
+service ReplicaManager {
+    rpc increment (incRequest) returns (incResponse){}
 }
 
