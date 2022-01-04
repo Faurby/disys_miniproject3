@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	grpc "google.golang.org/grpc"
 )
@@ -19,11 +20,11 @@ var (
 )
 
 func main() {
-	listen, err := net.Listen("tcp", ":5000")
+	listen, err := net.Listen("tcp", os.Args[1])
 	if err != nil {
-		log.Fatalf("Failed to listen on port 5000: %v", err)
+		log.Fatalf("Failed to listen on port: %v", err)
 	}
-	log.Println(":5000 is listening")
+	log.Printf("%v is listening", os.Args[1])
 
 	// Creates empty gRPC server
 	grpcServer := grpc.NewServer()

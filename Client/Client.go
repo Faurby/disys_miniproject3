@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -24,11 +25,16 @@ var (
 
 func main() {
 
-	log.Println("Connecting to frontend on port 5000")
-	conn, err := grpc.Dial("localhost:5000", grpc.WithInsecure())
-
+	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	conn, err := grpc.DialContext(ctx, "localhost:5000", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatalf("Failed to connect gRPC server :: %v", err)
+		log.Printf("Failed to connect gRPC server 5001: %v \n Trying to connect to 5001", err)
+		conn, _ = grpc.Dial("localhost:5001", grpc.WithInsecure())
+		log.Println("Connected to frontend on port 5001")
+
+	} else {
+		log.Println("Connected to frontend on port 5000")
+
 	}
 	defer conn.Close()
 
@@ -59,10 +65,10 @@ func terminalInput() {
 			if len(increment) > 1 {
 				bidValue, _ := strconv.Atoi(increment[1])
 				response := incrementToFrontend(int32(bidValue))
-				fmt.Printf("The value is this now: %d", response)
+				fmt.Printf("The value is this now: %d\n", response)
 			} else {
 				response := incrementToFrontend(int32(1))
-				fmt.Printf("The value is this now: %d", response)
+				fmt.Printf("The value is this now: %d\n", response)
 			}
 		}
 	}
