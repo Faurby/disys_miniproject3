@@ -20,25 +20,18 @@ import (
 )
 
 var (
-	client pb.FrontendClient
+	client1, client2 pb.FrontendClient
 )
 
 func main() {
+	conn1, _ := grpc.Dial("localhost:5000", grpc.WithInsecure())
+	conn2, _ := grpc.Dial("localhost:5001", grpc.WithInsecure())
 
-	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
-	conn, err := grpc.DialContext(ctx, "localhost:5000", grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		log.Printf("Failed to connect gRPC server 5001: %v \n Trying to connect to 5001", err)
-		conn, _ = grpc.Dial("localhost:5001", grpc.WithInsecure())
-		log.Println("Connected to frontend on port 5001")
+	defer conn1.Close()
+	defer conn2.Close()
 
-	} else {
-		log.Println("Connected to frontend on port 5000")
-
-	}
-	defer conn.Close()
-
-	client = pb.NewFrontendClient(conn)
+	client1 = pb.NewFrontendClient(conn1)
+	client2 = pb.NewFrontendClient(conn2)
 
 	fmt.Println("Type 'increment' to increment by 1\n" +
 		"Otherwise type 'increment' followed by a value.\n")
@@ -75,7 +68,22 @@ func terminalInput() {
 }
 
 func incrementToFrontend(value int32) int32 {
-	response, _ := client.Increment(context.Background(), &pb.IncRequest{Amount: value})
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	response, err := client1.Increment(ctx, &pb.IncRequest{Amount: value})
+
+	if err != nil {
+		var err2 error
+		response, err2 = client2.Increment(ctx, &pb.IncRequest{Amount: value})
+
+		if err2 != nil {
+			fmt.Println("Both frontends down!")
+			return -1
+		} else {
+			fmt.Println("Frontend#1 down, using frontend#2")
+		}
+	}
 
 	return response.NewAmount
 }

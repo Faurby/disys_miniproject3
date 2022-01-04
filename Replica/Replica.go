@@ -59,5 +59,5 @@ func (c *Server) Increment(ctx context.Context, in *pb.IncRequest) (*pb.IncRespo
 
 func countdownToDeath() {
 	time.Sleep(30 * time.Second)
-	os.Exit(1)
+	//os.Exit(1)
 }
